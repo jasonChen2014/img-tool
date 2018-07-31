@@ -29,7 +29,7 @@
                 </el-form>
                 </el-row>
             </el-header>
-            <el-container>
+            <el-container v-loading="loading">
                 <el-aside width="300px">
                     <ul class="ent_goods_list">
                         <li class="ent_goods" v-bind:class="{active:ent_goods.active}" v-for="(ent_goods,index) in ent_goods_list" @click="click_ent_goods(index)">
@@ -99,6 +99,7 @@ import 'element-ui/lib/theme-chalk/index.css'
 export default {
     data() {
         return {
+            loading: false,
             form: {
                 name: '',
                 ent_name: '',
@@ -125,8 +126,8 @@ export default {
             ent_goods_list: [
                 {
                     ent_name: '',
-                    ent_goods_code: '111',
-                    picGoodsCommonName: '云南白药',
+                    ent_goods_code: ' ',
+                    picGoodsCommonName: '   ',
                     picFactoryName: '',
                     picSpec: '',
                     picBarCode: '',
@@ -177,8 +178,8 @@ export default {
             });
         },
         ent_usernamechange: function(value) {
-            console.log(value);
             var self = this;
+            self.loading = true;
             let ent_username = value;
             let ent_name = self.form.ent_name;
             self.$axios.get('https://data.gaojihealth.cn/picdeal/deal/shop/'+ent_name+'/'+ent_username).then(function(res){
@@ -206,6 +207,7 @@ export default {
                 for(let i = 0;i < goods_list.length;i++) {
                     if(goods_list[i] == null) {
                         goods_list.splice(i,1); 
+                        --i;
                     }
                 }
                 self.ent_goods_list = goods_list;
@@ -216,6 +218,7 @@ export default {
                         self.form[index] = ent_goods[index];
                     }
                 }
+                self.loading = false;
             });
             ent_goods_codes.forEach(function(ent_goods_code_obj,index){
                 let ent_goods_code = ent_goods_code_obj.ent_goods_code;
@@ -287,9 +290,9 @@ export default {
             return self.$axios.get('https://data.gaojihealth.cn/picdeal/deal/feedback2/'+ent_name+'/'+ent_goods_code+'/20180718')
         },
         click_ent_goods: function(index){
-            console.log(index);
             let self = this;
             let ent_goods_list = self.ent_goods_list;
+            if(ent_goods_list[index].active)return;
             ent_goods_list = ent_goods_list.map(function(ent_goods){
                 ent_goods.active = ''
                 return ent_goods;
@@ -362,6 +365,7 @@ export default {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        cursor: pointer;
     }
     .ent_goods.active{
         background-color: #409EFF;
