@@ -5,6 +5,7 @@ import ElementUI from 'element-ui'
 import 'element-ui/lib/theme-chalk/index.css'
 import App from './App'
 import router from './router'
+import eventproxy from 'eventproxy'
 
 Vue.config.productionTip = false
 
@@ -16,6 +17,7 @@ import axios from 'axios'
 axios.defaults.baseURL = ''
 axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded'
 Vue.prototype.$axios = axios
+Vue.prototype.eventproxy = new eventproxy();
 
 /* eslint-disable no-new */
 new Vue({

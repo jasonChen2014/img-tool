@@ -18,25 +18,31 @@
                             </el-select>
                         </el-form-item>
                     </el-col>
+                    <!--
                     <el-col :span="6">
                         <el-form-item label="店内码">
                             <el-select v-model="form.ent_goods_code" @change="ent_goods_codechange" placeholder="请选择用户">
                                 <el-option v-for="ent_goods_code in ent_goods_codes" :key="ent_goods_code" :label="ent_goods_code" :value="ent_goods_code"></el-option>
                             </el-select>
                         </el-form-item>
-                    </el-col>
+                    </el-col>-->
                 </el-form>
                 </el-row>
             </el-header>
             <el-container>
                 <el-aside width="300px">
-                    <ul class="ent_goods_imgs">
-                        <li class="ent_good_img" v-for="ent_goods_pic in ent_goods_pics">
-                            <img :src="ent_goods_pic" />
+                    <ul class="ent_goods_list">
+                        <li class="ent_goods" v-bind:class="{active:ent_goods.active}" v-for="(ent_goods,index) in ent_goods_list" @click="click_ent_goods(index)">
+                            {{ent_goods.ent_goods_code}} {{ent_goods.picGoodsCommonName}}
                         </li>
                     </ul>
                 </el-aside>
                 <el-main>
+                    <el-row class="ent_goods_imgs">
+                        <el-col :span="4" v-for="ent_goods_pic in form.ent_goods_pics" class="ent_good_img">
+                            <img :src="ent_goods_pic" />
+                        </el-col>
+                    </el-row>
                     <div class="ent_good_form">
                         <el-form ref="form" :model="form" label-width="80px">
                             <el-form-item label="通用名">
@@ -106,45 +112,29 @@ export default {
                 picApprovalNo: '',
 
                 picGoodsBrand: '',
-                picProductName: ''
+                picProductName: '',
+
+                ent_goods_pics: [],
+                active: ''
             },
             ent_names: ['万宁','瑞康'],
             ent_usernames: ['hxchen','canjie'],
-            ent_goods_codes: ['111','222','333'],
+            //ent_goods_codes: ['111','222','333'],
+            ent_goods_codes: [],
             ent_goods_pics: [],
-            ent_goods: [
+            ent_goods_list: [
                 {
+                    ent_name: '',
                     ent_goods_code: '111',
-                    pic_goods_common_name: '云南白药',
-                    pic_factory_name: '',
-                    pic_spec: '',
-                    pic_barcode: '',
-                    pic_approval_no: '',
-                    imgs: [''],
-                    pic_goods_brand: '',
-                    pic_product_name: ''
-                },
-                {
-                    ent_goods_code: '222',
-                    pic_goods_common_name: '云南白药',
-                    pic_factory_name: '',
-                    pic_spec: '',
-                    pic_barcode: '',
-                    pic_approval_no: '',
-                    imgs: [''],
-                    pic_goods_brand: '',
-                    pic_product_name: ''
-                },
-                {
-                    ent_goods_code: '333',
-                    pic_goods_common_name: '云南白药',
-                    pic_factory_name: '',
-                    pic_spec: '',
-                    pic_barcode: '',
-                    pic_approval_no: '',
-                    imgs: [''],
-                    pic_goods_brand: '',
-                    pic_product_name: ''
+                    picGoodsCommonName: '云南白药',
+                    picFactoryName: '',
+                    picSpec: '',
+                    picBarCode: '',
+                    picApprovalNo: '',
+                    picGoodsBrand: '',
+                    picProductName: '',
+                    ent_goods_pics: [],
+                    active: ''
                 }
             ],
             formLabelWidth: '120px',
@@ -195,8 +185,64 @@ export default {
                 console.log(res);
                 if(res.data.success) {
                     //console.log('hehe');
-                    self.ent_goods_codes = res.data.list;
+                    let list = res.data.list,ent_goods_codes = [];
+                    for(let index in list) {
+                        let obj = {};
+                        obj.ent_goods_code = index;
+                        obj.status = list[index];
+                        ent_goods_codes.push(obj);
+                    }
+                    self.ent_goods_codes = ent_goods_codes;
+                    self.getGoodsByCodeList();
                 }
+            });
+        },
+        getGoodsByCodeList: function(){
+            var self = this;
+            let ent_name = self.form.ent_name;
+            let ent_username = self.form.ent_username;
+            let ent_goods_codes = self.ent_goods_codes;
+            self.eventproxy.after('getGoodsByCode',ent_goods_codes.length,function(goods_list){
+                for(let i = 0;i < goods_list.length;i++) {
+                    if(goods_list[i] == null) {
+                        goods_list.splice(i,1); 
+                    }
+                }
+                self.ent_goods_list = goods_list;
+                if(self.ent_goods_list.length > 0) {
+                    let ent_goods = self.ent_goods_list[0];
+                    ent_goods.active = 'active';
+                    for(let index in ent_goods){
+                        self.form[index] = ent_goods[index];
+                    }
+                }
+            });
+            ent_goods_codes.forEach(function(ent_goods_code_obj,index){
+                let ent_goods_code = ent_goods_code_obj.ent_goods_code;
+                self.$axios.all([self.getPics(ent_name,ent_username,ent_goods_code), self.getForm1(ent_name,ent_username,ent_goods_code),self.getForm2(ent_name,ent_username,ent_goods_code)]).then(self.$axios.spread(function (res1, res2,res3) {
+                    // 三个请求现在都执行完成
+                    let ent_goods = {};
+                    if(res2.data.success && res3.data.success) {
+                        var d2 = res2.data,d3 = res3.data;
+                        ent_goods.ent_name = d3.ent_name || d2.ent_name;
+                        ent_goods.ent_goods_code = d3.ent_goods_code || d2.ent_goods_code;
+                        ent_goods.picGoodsCommonName = d3.goods_common_name || d2.goods_product_name;
+                        ent_goods.picFactoryName = d3.factory_name || d2.production_company;
+                        ent_goods.picSpec = d3.barcode_spec || d2.ent_goods_spec;
+                        ent_goods.picBarCode = d3.barcode || d2.barcode;
+                        ent_goods.picApprovalNo = d3.approval_no || d2.approval_no;
+                        ent_goods.picGoodsBrand = '';
+                        ent_goods.picProductName = '';
+                        if(res1.data.success) {
+                            ent_goods.ent_goods_pics = res1.data.list.map(function(value,index){
+                                return "https://data.gaojihealth.cn/picdeal/deal/img/"+self.form.ent_name+"/"+self.form.ent_username+"/"+ent_goods.ent_goods_code+"/"+value.replace(/\.jpg$/,'');
+                            });
+                        }
+                        self.eventproxy.emit('getGoodsByCode', ent_goods);
+                    }else{
+                        self.eventproxy.emit('getGoodsByCode', null);
+                    }
+                }));
             });
         },
         ent_goods_codechange: function(value){
@@ -240,6 +286,20 @@ export default {
             var self = this;
             return self.$axios.get('https://data.gaojihealth.cn/picdeal/deal/feedback2/'+ent_name+'/'+ent_goods_code+'/20180718')
         },
+        click_ent_goods: function(index){
+            console.log(index);
+            let self = this;
+            let ent_goods_list = self.ent_goods_list;
+            ent_goods_list = ent_goods_list.map(function(ent_goods){
+                ent_goods.active = ''
+                return ent_goods;
+            });
+            let ent_goods = ent_goods_list[index];
+            ent_goods.active = 'active';
+            for(let index2 in ent_goods){
+                self.form[index2] = ent_goods[index2];
+            }
+        },
         onSubmit: function(){
             let self = this;
             let entName = self.form.ent_name;
@@ -275,7 +335,7 @@ export default {
         box-shadow: 1px 1px 3px #DCDFE6;
     }
     .el-aside {
-        /*border-right: 1px solid #DCDFE6;*/
+        border-right: 1px solid #DCDFE6;
     }
     .el-row {
         margin-bottom: 20px;
@@ -283,18 +343,29 @@ export default {
         margin-bottom: 0;
         }
     }
-    .ent_good_img {
-        margin: 20px;
-        list-style:none;
+    .ent_good_img{
+        padding: 10px;
     }
     .ent_good_img img{
-        width: 260px;
-        height: 260px;
+        width: 100%;
     }
     .ent_good_form{
         width: 60%;
         margin: 0 auto;
         margin-top: 22px;
+    }
+    .ent_goods{
+        width: 100%;
+        height: 50px;
+        line-height: 50px;
+        border-bottom: 1px solid #DCDFE6;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .ent_goods.active{
+        background-color: #409EFF;
+        color: #fff;
     }
 
 </style>
