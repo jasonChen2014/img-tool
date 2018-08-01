@@ -31,11 +31,22 @@
             </el-header>
             <el-container v-loading="loading">
                 <el-aside width="300px">
-                    <ul class="ent_goods_list">
-                        <li class="ent_goods" v-bind:class="{active:ent_goods.active}" v-for="(ent_goods,index) in ent_goods_list" @click="click_ent_goods(index)">
-                            {{ent_goods.ent_goods_code}} {{ent_goods.picGoodsCommonName}}
-                        </li>
-                    </ul>
+                    <el-tabs v-model="activeTab" type="card" @tab-click="handleTabClick" stretch="true">
+                        <el-tab-pane label="未修改" name="first">
+                            <ul class="ent_goods_list">
+                                <li class="ent_goods" v-bind:class="{active:ent_goods.active}" v-for="(ent_goods,index) in ent_goods_list_0" @click="click_ent_goods(index,0)">
+                                    {{ent_goods.ent_goods_code}} {{ent_goods.picGoodsCommonName}}
+                                </li>
+                            </ul>
+                        </el-tab-pane>
+                        <el-tab-pane label="已修改" name="second">
+                            <ul class="ent_goods_list">
+                                <li class="ent_goods" v-bind:class="{active:ent_goods.active}" v-for="(ent_goods,index) in ent_goods_list_1" @click="click_ent_goods(index,1)">
+                                    {{ent_goods.ent_goods_code}} {{ent_goods.picGoodsCommonName}}
+                                </li>
+                            </ul>
+                        </el-tab-pane>
+                    </el-tabs>
                 </el-aside>
                 <el-main>
                     <el-row class="ent_goods_imgs">
@@ -44,7 +55,7 @@
                         </el-col>
                     </el-row>
                     <div class="ent_good_form">
-                        <el-form ref="form" :model="form" label-width="80px">
+                        <el-form :inline="true" ref="form" :model="form" label-width="80px">
                             <el-form-item label="通用名">
                                 <el-input v-model="form.picGoodsCommonName"></el-input>
                             </el-form-item>
@@ -69,7 +80,7 @@
                             </el-form-item>
 
                             <el-form-item>
-                                <el-button type="primary" @click="onSubmit">确认</el-button>
+                                <el-button type="primary" @click="onSubmit">提交</el-button>
                                 <el-button>取消</el-button>
                             </el-form-item>
                         </el-form>
@@ -138,8 +149,12 @@ export default {
                     active: ''
                 }
             ],
+            ent_goods_list_0: [],
+            ent_goods_list_1: [],
             formLabelWidth: '120px',
-            dialogFormVisible: localStorage.gj_username?false:true
+            dialogFormVisible: localStorage.gj_username?false:true,
+            origin_codes_list: {},
+            activeTab: 'first'
         }
     },
     mounted(){ 
@@ -187,6 +202,7 @@ export default {
                 if(res.data.success) {
                     //console.log('hehe');
                     let list = res.data.list,ent_goods_codes = [];
+                    self.origin_codes_list = list;
                     for(let index in list) {
                         let obj = {};
                         obj.ent_goods_code = index;
@@ -204,20 +220,27 @@ export default {
             let ent_username = self.form.ent_username;
             let ent_goods_codes = self.ent_goods_codes;
             self.eventproxy.after('getGoodsByCode',ent_goods_codes.length,function(goods_list){
+                self.ent_goods_list_0 = [];
+                self.ent_goods_list_1 = [];
                 for(let i = 0;i < goods_list.length;i++) {
                     if(goods_list[i] == null) {
                         goods_list.splice(i,1); 
                         --i;
+                    }else if(self.origin_codes_list[goods_list[i].ent_goods_code] == 0) {
+                        self.ent_goods_list_0.push(goods_list[i]);
+                    }else if(self.origin_codes_list[goods_list[i].ent_goods_code] == 1) {
+                        self.ent_goods_list_1.push(goods_list[i]);
                     }
                 }
                 self.ent_goods_list = goods_list;
+                /*
                 if(self.ent_goods_list.length > 0) {
                     let ent_goods = self.ent_goods_list[0];
                     ent_goods.active = 'active';
                     for(let index in ent_goods){
                         self.form[index] = ent_goods[index];
                     }
-                }
+                }*/
                 self.loading = false;
             });
             ent_goods_codes.forEach(function(ent_goods_code_obj,index){
@@ -289,9 +312,15 @@ export default {
             var self = this;
             return self.$axios.get('https://data.gaojihealth.cn/picdeal/deal/feedback2/'+ent_name+'/'+ent_goods_code+'/20180718')
         },
-        click_ent_goods: function(index){
+        click_ent_goods: function(index,tab){
             let self = this;
-            let ent_goods_list = self.ent_goods_list;
+            let ent_goods_list;
+            if(tab == 0) {
+                ent_goods_list = self.ent_goods_list_0;
+            }else{
+                ent_goods_list = self.ent_goods_list_1;
+            }
+            
             if(ent_goods_list[index].active)return;
             ent_goods_list = ent_goods_list.map(function(ent_goods){
                 ent_goods.active = ''
@@ -302,6 +331,9 @@ export default {
             for(let index2 in ent_goods){
                 self.form[index2] = ent_goods[index2];
             }
+        },
+        handleTabClick: function(tab,event) {
+            console.log(tab, event);
         },
         onSubmit: function(){
             let self = this;
@@ -353,7 +385,7 @@ export default {
         width: 100%;
     }
     .ent_good_form{
-        width: 60%;
+        text-align: left;
         margin: 0 auto;
         margin-top: 22px;
     }
