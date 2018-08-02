@@ -188,7 +188,7 @@ export default {
                 //console.log(res);
                 if(res.data.success) {
                     //console.log('hehe');
-                    self.ent_usernames = res.data.list;
+                    self.ent_usernames = ['all',...res.data.list];
                 }
             });
         },
@@ -340,14 +340,14 @@ export default {
             let entName = self.form.ent_name;
             let entGoodsCode = self.form.ent_goods_code;
 
-            let picGoodsCommonName = self.form.picGoodsCommonName;
-            let picFactoryName = self.form.picFactoryName;
-            let picSpec = self.form.picSpec;
-            let picBarCode = self.form.picBarCode;
-            let picApprovalNo = self.form.picApprovalNo;
+            let picGoodsCommonName = self.form.picGoodsCommonName || 'null';
+            let picFactoryName = self.form.picFactoryName || 'null';
+            let picSpec = self.form.picSpec || 'null';
+            let picBarCode = self.form.picBarCode || 'null';
+            let picApprovalNo = self.form.picApprovalNo || 'null';
 
-            let picGoodsBrand = self.form.picGoodsBrand;
-            let picProductName = self.form.picProductName;
+            let picGoodsBrand = self.form.picGoodsBrand || 'null';
+            let picProductName = self.form.picProductName || 'null';
             //拼接路由
             let url = 'https://data.gaojihealth.cn/picdeal/deal/entpic/'+entName+'/'+entGoodsCode+'/'+picGoodsBrand+'/'+picProductName+'/'+picGoodsCommonName+'/'+picFactoryName+'/'+picSpec+'/'+picBarCode+'/'+picApprovalNo;
             self.$axios.get(url).then(function(res){
@@ -356,6 +356,7 @@ export default {
                         message: '恭喜你，提交成功',
                         type: 'success'
                     });
+                    self.getGoodsByCodeList();
                 }
             });
         }
